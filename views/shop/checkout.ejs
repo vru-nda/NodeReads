@@ -23,18 +23,19 @@
                         <%= totalSum %>
                     </h2>
                 </div>
-                <div class="centered">
-                    <button id="order-btn" class="btn">ORDER</button>
-                    <script src="https://js.stripe.com/v3/"></script>
-                    <script>
-                        var stripe = Stripe('pk_test_51J5XXGSAmrmweyG7tyH5ISbCF9xVG87KCLs9Pt8IloxJh39ENp91tXKAU108jvLohreHZXzrw8IHVQDhgaXIiN5S00UuUAutD0');
-                        var orderBtn = document.getElementById('order-btn');
-                        orderBtn.addEventListener('click', function() {
-                            stripe.redirectToCheckout({
-                                sessionId: '<%= sessionId %>'
-                            });
-                        });
+                <div class="centered"> 
+                    <form action="/create-order" method="POST">
+                    <script
+                      src="https://checkout.stripe.com/checkout.js" class="stripe-button"
+                      data-key= "<$= process.env.STRIPE_S_KEY %>"
+                      data-amount="<%= totalSum * 100 %>"
+                      data-name="Your Order"
+                      data-description="All the items you ordered"
+                      data-image="https://stripe.com/img/documentation/checkout/marketplace.png"
+                      data-locale="auto"
+                      data-currency="inr">
                     </script>
+                  </form>
                 </div>
             </main>
             <%- include('../includes/end.ejs') %>

@@ -1,2 +1,13 @@
-node_modules
+#dependency 
+/node_modules
+
+/data
+/images
+
+#env variables
 .env
+
+*.log
+
+server.cert
+server.key
