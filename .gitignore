@@ -5,8 +5,7 @@
 /images
 
 #env variables
-.env
-
+nodemon.json
 *.log
 
 server.cert
