@@ -22,3 +22,11 @@ const deleteProduct = (btn) => {
             console.log(err);
         })
 };
+
+document.addEventListener('click', (event) => {
+  if (event.target && event.target.classList.contains('btn')) {
+    if (event.target.textContent === 'Delete') {
+      deleteProduct(event.target);
+    }
+  }
+});

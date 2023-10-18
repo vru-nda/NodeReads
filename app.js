@@ -14,6 +14,7 @@ require("dotenv").config();
 const helmet = require("helmet");
 const compression = require("compression");
 const morgan = require("morgan");
+const paypal = require("paypal-rest-sdk");
 
 const errorController = require("./controllers/error");
 const shopController = require("./controllers/shop");
@@ -26,6 +27,12 @@ const app = express();
 const store = new MongoDBStore({
   uri: MONGODB_URI,
   collection: "sessions",
+});
+
+paypal.configure({
+  mode: "sandbox",
+  client_id: process.env.PAYPAL_CLIENT_ID,
+  client_secret: process.env.PAYPAL_CLIENT_SECRET,
 });
 
 const csrfProtection = csrf();
@@ -109,13 +116,14 @@ app.use((req, res, next) => {
     });
 });
 
-app.post("/create-order", isAuth, shopController.postOrder);
-
 app.use(csrfProtection);
 app.use((req, res, next) => {
   res.locals.csrfToken = req.csrfToken();
   next();
 });
+
+app.post("/create-order", isAuth, shopController.postOrder);
+app.get("/cancel", (req, res) => res.send("Cancelled"));
 
 app.use("/admin", adminRoutes);
 app.use(shopRoutes);
@@ -137,7 +145,10 @@ app.use((error, req, res, next) => {
 });
 
 mongoose
-  .connect(MONGODB_URI)
+  .connect(MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then((result) => {
     // https
     //   .createServer({ key: privateKey, cert: certificate }, app)

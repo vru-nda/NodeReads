@@ -10,7 +10,7 @@ const User = require('../models/user');
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: 'nodereads@gmail.com',
+        user: process.env.USER_EMAIL,
         pass: process.env.MAIL_PASSWORD
     }
 });
@@ -163,7 +163,7 @@ exports.postSignup = (req, res, next) => {
             //sending email for success
             return transporter.sendMail({
                 to: email,
-                from: 'nodereads@gmail.com',
+                from: process.env.USER_EMAIL,
                 subject: 'Signup succeeded!',
                 html: '<h1>You successfully signed up!</h1>'
             });
@@ -219,11 +219,11 @@ exports.postReset = (req, res, next) => {
                 res.redirect('/');
                 transporter.sendMail({
                     to: req.body.email,
-                    from: 'nodereads@gmail.com',
+                    from: process.env.USER_EMAIL,
                     subject: 'Password reset',
                     html: `
                           <p>You requested a password reset</p>
-                          <p>Click this  <a href="http://localhost:3000/reset/${token}">link</a> to set a new password.</p>
+                          <p>Click this  <a href='${process.env.APP_URL}/reset/${token}'>link</a> to set a new password.</p>
                           `
                 });
             })

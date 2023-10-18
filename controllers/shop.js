@@ -2,7 +2,8 @@ const fs = require("fs");
 const path = require("path");
 
 const PDFDocument = require("pdfkit");
-const stripe = require("stripe")(process.env.STRIPE_S_KEY);
+// const stripe = require("stripe")(process.env.STRIPE_S_KEY);
+const paypal = require("paypal-rest-sdk");
 
 const Product = require("../models/product");
 const Order = require("../models/order");
@@ -157,6 +158,7 @@ exports.getCheckout = (req, res, next) => {
         pageTitle: "Checkout",
         products: products,
         totalSum: total,
+        paypalClientId: process.env.PAYPAL_CLIENT_ID,
       });
     })
     .catch((err) => {
@@ -169,9 +171,8 @@ exports.getCheckout = (req, res, next) => {
 // /orders ==> POST
 exports.postOrder = (req, res, next) => {
   // Token is created using Checkout or Elements!
-  const token = req.body.stripeToken; // Using Express
+  // const token = req.body.stripeToken; // Using Express
   let totalSum = 0;
-
   req.user
     .populate("cart.items.productId")
     .execPopulate()
@@ -183,6 +184,7 @@ exports.postOrder = (req, res, next) => {
       const products = user.cart.items.map((i) => {
         return { quantity: i.quantity, product: { ...i.productId._doc } };
       });
+
       //creating order
       const order = new Order({
         user: {
@@ -194,18 +196,62 @@ exports.postOrder = (req, res, next) => {
       return order.save();
     })
     .then((result) => {
-      const charge = stripe.charges.create({
-        amount: totalSum * 100,
-        currency: "usd",
-        description: "Demo Order",
-        source: token,
-        metadata: { order_id: result._id.toString() },
+      const orderItems = req.user.cart.items.map((item) => {
+        return {
+          name: item.productId.title,
+          sku: "item",
+          price: item.productId.price,
+          currency: "USD",
+          quantity: item.quantity,
+        };
       });
-      return req.user.clearCart();
+
+      const create_payment_json = {
+        intent: "sale",
+        payer: {
+          payment_method: "paypal",
+        },
+        redirect_urls: {
+          return_url: "http://localhost:3000/orders",
+          cancel_url: "http://localhost:3000/cancel",
+        },
+        transactions: [
+          {
+            item_list: {
+              items: orderItems,
+            },
+            amount: {
+              currency: "USD",
+              total: totalSum,
+            },
+            description: "Demo order",
+          },
+        ],
+      };
+
+      paypal.payment.create(create_payment_json, function (error, payment) {
+        if (error) {
+          throw error;
+        } else {
+          for (let i = 0; i < payment.links.length; i++) {
+            if (payment.links[i].rel === "approval_url") {
+              req.user.clearCart();
+              return res.redirect(payment.links[i].href);
+            }
+          }
+        }
+      });
+      // const charge = stripe.charges.create({
+      //   amount: totalSum * 100,
+      //   currency: 'usd',
+      //   description: 'Demo Order',
+      //   source: token,
+      //   metadata: {order_id: result._id.toString()},
+      // });
     })
-    .then(() => {
-      res.redirect("/orders");
-    })
+    // .then(() => {
+    //   res.redirect("/orders");
+    // })
     .catch((err) => {
       const error = new Error(err);
       error.httpStatusCode = 500;
