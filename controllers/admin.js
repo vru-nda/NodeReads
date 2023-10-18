@@ -20,6 +20,7 @@ exports.postAddProduct = (req, res, next) => {
     const title = req.body.title;
     // const imgUrl = req.body.imgUrl;
     const image = req.file;
+    console.log("IMAGE", req.file)
     const price = req.body.price;
     const description = req.body.description;
     //validation failed

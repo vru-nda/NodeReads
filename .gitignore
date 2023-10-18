@@ -3,7 +3,6 @@
 package-lock.json
 
 /data
-/images
 
 #env variables
 nodemon.json
