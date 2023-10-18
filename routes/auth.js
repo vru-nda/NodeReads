@@ -72,6 +72,13 @@ router.post('/reset', authController.postReset);
 
 router.get('/reset/:token', authController.getNewPassword);
 
-router.post('/new-password', authController.postNewPassword);
+router.post(
+  "/new-password",
+  body("password", "Password has to be valid.")
+    .isLength({min: 5})
+    .isAlphanumeric()
+    .trim(),
+  authController.postNewPassword
+);
 
 module.exports = router;
