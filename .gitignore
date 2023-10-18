@@ -3,6 +3,7 @@
 package-lock.json
 
 /data
+.DS_Store
 
 #env variables
 nodemon.json

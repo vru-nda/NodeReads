@@ -212,8 +212,8 @@ exports.postOrder = (req, res, next) => {
           payment_method: "paypal",
         },
         redirect_urls: {
-          return_url: "http://localhost:3000/orders",
-          cancel_url: "http://localhost:3000/cancel",
+          return_url: `${process.env.APP_URL}/orders`,
+          cancel_url: `${process.env.APP_URL}/cancel`,
         },
         transactions: [
           {
