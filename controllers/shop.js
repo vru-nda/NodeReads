@@ -47,6 +47,12 @@ exports.getProducts = (req, res, next) => {
   const page = +req.query.page || 1;
   let totalItems;
 
+  fs.readdir("images", (err, files) => {
+    files.forEach((file) => {
+      console.log("file", file);
+    });
+  });
+
   Product.find()
     .countDocuments()
     .then((numProducts) => {
@@ -182,7 +188,7 @@ exports.postOrder = (req, res, next) => {
       });
 
       const products = user.cart.items.map((i) => {
-        return { quantity: i.quantity, product: { ...i.productId._doc } };
+        return {quantity: i.quantity, product: {...i.productId._doc}};
       });
 
       //creating order
@@ -260,7 +266,7 @@ exports.postOrder = (req, res, next) => {
 }; //webhook
 
 exports.getOrders = (req, res, next) => {
-  Order.find({ "user.userId": req.user._id })
+  Order.find({"user.userId": req.user._id})
     .then((orders) => {
       res.render("shop/orders", {
         path: "/orders",
