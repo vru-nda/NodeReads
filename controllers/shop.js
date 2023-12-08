@@ -47,12 +47,6 @@ exports.getProducts = (req, res, next) => {
   const page = +req.query.page || 1;
   let totalItems;
 
-  fs.readdir("images", (err, files) => {
-    files.forEach((file) => {
-      console.log("file", file);
-    });
-  });
-
   Product.find()
     .countDocuments()
     .then((numProducts) => {

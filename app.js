@@ -1,6 +1,5 @@
 const path = require("path");
 const fs = require("fs");
-const https = require("https");
 
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -15,6 +14,7 @@ const helmet = require("helmet");
 const compression = require("compression");
 const morgan = require("morgan");
 const paypal = require("paypal-rest-sdk");
+const AWS = require("aws-sdk");
 
 const errorController = require("./controllers/error");
 const shopController = require("./controllers/shop");
@@ -29,6 +29,14 @@ const store = new MongoDBStore({
   collection: "sessions",
 });
 
+// Configurations for AWS SDK
+AWS.config.update({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: "eu-north-1",
+});
+
+// configure paypal
 paypal.configure({
   mode: "sandbox",
   client_id: process.env.PAYPAL_CLIENT_ID,
@@ -40,26 +48,21 @@ const csrfProtection = csrf();
 // const privateKey = fs.readFileSync("server.key");
 // const certificate = fs.readFileSync("server.cert");
 
-const fileStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "images");
-  },
-  filename: (req, file, cb) => {
-    cb(null, new Date().toISOString().replace(/:/g, "-") + file.originalname);
-  },
-});
-
-const fileFilter = (req, file, cb) => {
-  if (
-    file.mimetype === "image/jpeg" ||
-    file.mimetype === "image/jpg" ||
-    file.mimetype === "image/png"
-  ) {
+// filter image file types
+const imageFileFilter = (req, file, cb) => {
+  const allowedMimeTypes = ["image/jpeg", "image/jpg", "image/png"];
+  if (allowedMimeTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
     cb(null, false);
   }
 };
+
+// Configure multer with the imageFileFilter
+const upload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: imageFileFilter,
+});
 
 app.set("view engine", "ejs");
 app.set("views", "views");
@@ -74,14 +77,19 @@ const logFile = fs.createWriteStream(path.join(__dirname, "access.log"), {
 
 app.use(helmet());
 app.use(compression());
-app.use(morgan("combined", { stream: logFile }));
-
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(
-  multer({ storage: fileStorage, fileFilter: fileFilter }).single("image")
-);
+app.use(morgan("combined", {stream: logFile}));
+app.use(upload.single("image"));
+app.use(bodyParser.urlencoded({extended: false}));
 app.use(express.static(path.join(__dirname, "public")));
-app.use("/images", express.static(path.join(__dirname, "images")));
+
+// Set Content Security Policy headers
+app.use((req, res, next) => {
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src *; img-src * data:; script-src 'self'; style-src 'self';"
+  );
+  next();
+});
 
 app.use(
   session({
